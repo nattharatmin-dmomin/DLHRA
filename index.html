@@ -150,7 +150,7 @@ html,body,button,input,select,textarea{font-family:'Anuphan',sans-serif!importan
 </main></div>
 <script>
 // ใส่ URL ของ Google Apps Script Web App หลัง Deploy (ลงท้ายด้วย /exec)
-const GAS_WEB_APP_URL = '';
+const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyQ54jY5ksVTNAl5MnQ8vNgASUlg4Po6Lj_7yY3WV5lw0M_abiVV_HWIqctcXkX-eWs6g/exec';
 const FREQUENCIES=[{v:0,t:'ไม่เคย'},{v:1,t:'1–2 วัน'},{v:2,t:'3–4 วัน'},{v:3,t:'5–6 วัน'},{v:4,t:'ทุกวัน'}];
 const dimensions=[
 {name:'พฤติกรรมและระยะเวลาการใช้',icon:'📱',color:'#E5F4FF',accent:'#5CA8D6',border:'#BBDFF4',advice:'กำหนดช่วงเวลาใช้งานและช่วงพัก ลดการหยิบใช้โดยไม่มีความจำเป็น และปิดการแจ้งเตือนที่ไม่จำเป็น'},
@@ -260,8 +260,15 @@ function finishAssessment(){
 }
 function saveResults(payload){
  const el=document.getElementById('saveStatus');
- if(typeof google!=='undefined'&&google.script&&google.script.run){el.textContent='กำลังบันทึกผลลง Google Sheets…';google.script.run.withSuccessHandler(()=>el.textContent='✓ บันทึกผลลง Google Sheets เรียบร้อยแล้ว').withFailureHandler(e=>el.textContent='ไม่สามารถบันทึกได้: '+(e.message||e)).saveAssessment(payload);return;}
- if(GAS_WEB_APP_URL){el.textContent='กำลังส่งข้อมูลไปยัง Google Sheets…';fetch(GAS_WEB_APP_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)}).then(()=>el.textContent='ส่งคำขอบันทึกแล้ว (โหมด Standalone ไม่สามารถยืนยันผลตอบกลับจาก Google ได้)').catch(()=>el.textContent='ส่งข้อมูลไม่สำเร็จ กรุณาตรวจสอบ URL ของ Apps Script');return;}
- el.textContent='โหมดตัวอย่าง: ยังไม่ได้เชื่อมต่อ Google Sheets — เมื่อได้รับ Web App URL ให้นำไปใส่ใน GAS_WEB_APP_URL ด้านบนของไฟล์ HTML';
+ if(typeof google!=='undefined'&&google.script&&google.script.run){
+  el.textContent='กำลังบันทึกผลลง Google Sheets…';
+  google.script.run.withSuccessHandler(()=>{el.textContent='✓ Google Apps Script รับข้อมูลเรียบร้อยแล้ว';}).withFailureHandler(e=>{el.textContent='บันทึกไม่สำเร็จ: '+(e&&e.message?e.message:String(e));}).saveAssessment(payload);
+  return;
+ }
+ if(!GAS_WEB_APP_URL){el.textContent='ยังไม่ได้ตั้งค่า Google Apps Script URL';return;}
+ el.textContent='กำลังส่งข้อมูลไปยัง Google Sheets…';
+ fetch(GAS_WEB_APP_URL,{method:'POST',mode:'no-cors',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)})
+  .then(()=>{el.textContent='ส่งคำขอไปยัง Google Apps Script แล้ว แต่เบราว์เซอร์ไม่สามารถอ่านผลยืนยันจาก Google ได้ กรุณาตรวจชีต “DLHRA Responses” ว่ามีรายการใหม่หรือไม่';})
+  .catch(err=>{el.textContent='ส่งคำขอไม่สำเร็จ: '+(err&&err.message?err.message:'โปรดตรวจสอบอินเทอร์เน็ตและ URL ของ Apps Script');});
 }
 </script></body></html>
